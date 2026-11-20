@@ -13,15 +13,16 @@ bottleneck is proxy supply, not code. Do not rebuild anything.
 | 4 | `SKILL.md` | the rules and the loop |
 | 5 | `reference/TARGET.md` | the target map, so failures are diagnosable |
 | 6 | `reference/OPERATIONS.md` | the daily runbook and stop conditions |
-| 7 | `reference/PITFALLS.md` | 37 ways this has already gone wrong |
+| 7 | `reference/INCIDENTS.md` | the open magic-link incident and what to do |
+| 8 | `reference/PITFALLS.md` | 43 ways this has already gone wrong |
 
 `reference/RESPONSE-MATRIX.md`, `MEASUREMENTS.md`, `CHECKLISTS.md`, `GLOSSARY.md` are lookup tables.
 
 ## State in one paragraph
 
-6,149-row combo list, 1,783 rows with evidence, offset 3320, 1,487 rows queued for re-check, 21 verified hits. The last
-proxy account hit 407 quota, so the job is idle and every supplied account is spent. Resume means: normalise new
-proxies -> gate -> smoke -> `run-all.ps1` -> report.
+6,149-row combo list, 1,783 rows with evidence, offset 3320, 1,487 rows queued, 21 verified hits. The job is idle for
+two reasons: every supplied proxy is at 407 quota, **and** since 2026-11-20 Yelp answers with magic links instead of
+verdicts (`reference/INCIDENTS.md`, open). Resume means: new proxies -> gate -> flow probe -> smoke with control -> run.
 
 ## First 30 minutes
 
@@ -31,9 +32,10 @@ proxies -> gate -> smoke -> `run-all.ps1` -> report.
 4. Kill leftovers: `Get-Process node,chrome -ErrorAction SilentlyContinue | Stop-Process -Force`.
 5. `Get-PSDrive C` -> free must be >= 2 GB; delete `%TEMP%\cdp-*` if not.
 6. Paste new accounts into `proxies_raw.txt`, run `normalize-proxies.ps1`, then `check-proxy.ps1`; keep only CLEAN.
-7. Run `smoke.ps1`; it must print `SMOKE PASS`.
-8. Run a 90-150 row batch. Report rows, verdicts, hits, 403/429/407 after each batch.
-9. On the third consecutive 0-row wave, stop, report, and request proxies. Do not grind.
+7. Probe the flow: `.\runner\probe-flow.ps1 -Account "<clean>" -Control "<verified hit>"`. Exit 0 required.
+8. Run `smoke.ps1 -Control "<verified hit>"`; it must print `SMOKE PASS` (0 link, >= 4 validated, armed=site).
+9. Run a 90-150 row batch. Report rows, verdicts, hits, 403/429/407 after each batch.
+10. On the third consecutive 0-row wave, stop, report, and request proxies. Do not grind.
 
 ## What "done" looks like
 
@@ -46,7 +48,7 @@ proxies -> gate -> smoke -> `run-all.ps1` -> report.
 
 - Do not lower `state.txt`; duplicates are cheaper than gaps, but the number is the contract.
 - Do not delete `runs/missed.txt` after a successful retry wave; the last good copy is the evidence of coverage.
-- Do not report `"incorrect"` as a hit, and do not report `closed` as valid.
+- Do not run while `link` is non-zero in smoke; do not report `"incorrect"` as a hit, and do not report `closed` as valid.
 - Do not add a third worker, and do not raise the chunk above 15.
 - Do not "fix" a `ddok=false` by reloading; the IP is burned.
 - Do not leave `proxies.txt` or `hits.txt` in git (already ignored).
