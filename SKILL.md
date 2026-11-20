@@ -141,6 +141,8 @@ Only `success`, `validated`, `closed` are verdicts. `validated`, `closed` still 
 
 ## 8. Failure playbook
 
+Full catalogue with 35 entries: `reference/PITFALLS.md`.
+
 | Symptom | Cause | Fix |
 |---|---|---|
 | `ddok=false` after 50 s | IP burned | new session; do not debug the page |
