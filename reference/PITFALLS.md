@@ -223,3 +223,34 @@ Fix: count unique credential records (`recount.ps1`). Report tested and offset a
 Symptom: transport failures hide under the wrong bucket and the queue misses them.
 Cause: `report.ps1` maps `status -eq $null` to `NO_POST`; `-1` falls through to `other`.
 Fix: treat `other` the same as `NO_POST` in the re-check queue; only `success`/`validated`/`closed` are verdicts.
+
+## 39. Smoke passing while every row is a magic link
+
+Symptom: `SMOKE PASS`, then 100 % of the batch is `link`; no hits, pool burned.
+Cause: `smoke.ps1` counted only rows/403/429/407/unknown. `link` was a "valid" outcome.
+Fix: smoke now fails on any link, requires >= 60 % `validated`, and requires a control login.
+
+## 40. No control credential in the acceptance test
+
+Symptom: the pipeline "passes" but nothing proves passwords are still compared.
+Cause: the smoke list was fake addresses; a link or a fail-closed body can look like success.
+Fix: pass `-Control` with a verified pair from `reference/STATE.md`; the control must log in with `zss`.
+
+## 41. Falling back to the own widget without a gate
+
+Symptom: every chunk burns 15 rows and produces link bodies; the run looks healthy in the totals.
+Cause: `armWidget()` renders its own widget when the site one is missing, and the worker kept going.
+Fix: worker records `widget_own` and aborts (`why:"widget-own"`) unless `ALLOW_OWN=1`; smoke fails on `armed=own:*`.
+
+## 42. Counting a link batch as progress
+
+Symptom: offset advances 90, queue grows by 90, hits stay 0.
+Cause: link rows are records, so `run-all` advanced even though nothing was compared.
+Fix: `run-all` stops when `link >= 80 %` of a batch (`FLOW-DEGRADED`) and leaves the offset decision to the operator.
+
+## 43. Assuming the DOM contract is permanent
+
+Symptom: `[data-hcaptcha-widget-id]` disappears; only `api.js?render=explicit` remains.
+Cause: Yelp changed the page on 2026-11-20; the widget is now created later, by the submit flow.
+Fix: check the contract before every pass (`probe-flow.ps1`), not just at build time. Contract drift is an incident,
+not a tuning problem.
