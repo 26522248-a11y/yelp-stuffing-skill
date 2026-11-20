@@ -1,0 +1,5 @@
+# Oxylabs sticky accounts, one user:pass per line. These are placeholders.
+customer-mobile_00000000-cc-us:ExamplePass1
+customer-mobile_11111111-cc-us:Example+Pass2
+customer-mobile_22222222-cc-us:Example~Pass3
+customer-mobile_33333333-cc-us:Example=Pass4
