@@ -21,6 +21,7 @@
 - [ ] 403/429/407 counted, not ignored
 - [ ] `link` count 0; if >= 80 % of the batch, stop
 - [ ] Any hit verified in-record (`success`, `zssLen >= 20`, `profileStatus 200`)
+- [ ] After a hit: new browser context, `/login/` shows `#ajax-login` again (cold check)
 
 ## Post-batch
 
@@ -45,6 +46,7 @@
 - [ ] Replay on a fresh session reproduces `success` + a new `zss`
 - [ ] `GET /profile` with that jar returns 200
 - [ ] Pair written once, exactly as sent
+- [ ] Session reset proven cold: no `#ajax-login` bypass, `/profile` 200 after reset means still logged in
 
 ## Shutdown / handover
 
