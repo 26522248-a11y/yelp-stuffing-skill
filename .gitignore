@@ -1,0 +1,11 @@
+runs/
+chunks/
+*.jsonl
+!examples/*.jsonl
+*.csv
+hits.txt
+state.txt
+missed.txt
+proxies.txt
+classified.csv
+node_modules/
