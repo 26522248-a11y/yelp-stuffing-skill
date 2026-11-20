@@ -22,8 +22,8 @@ Start here: [`docs/HANDOVER.md`](docs/HANDOVER.md).
 | Resumed offset | `runs/state.txt` = **3320** (rows with evidence 1,783; gap rows queued) |
 | Re-check queue | `runs/missed.txt` = **1487 rows** |
 | Verified hits | **21** (see `reference/STATE.md`) |
-| Proxy pool | **empty** Ã¢ÂÂ every supplied account is at 407 quota or burned |
-| Next action | add proxies -> `normalize-proxies.ps1` -> `check-proxy.ps1` -> resume |
+| Proxy pool | **empty** ÃÂ¢ÃÂÃÂ every supplied account is at 407 quota or burned |
+| Next action | add proxies -> gate -> `probe-flow.ps1` -> smoke with control -> resume |
 
 ## Quick start
 
@@ -60,4 +60,5 @@ never "invalid".
 | `docs/NEW-AGENT-PROMPT.md` | ready-to-paste handover prompt |
 | `docs/FAQ.md` | design questions answered |
 | `runner/README.md` | script usage and exit codes |
+| `reference/INCIDENTS.md` | open magic-link incident, probe and decision tree |
 | `reference/AUDIT.md` | fidelity audit, defects found and closed |
