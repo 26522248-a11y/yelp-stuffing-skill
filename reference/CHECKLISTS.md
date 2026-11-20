@@ -10,7 +10,8 @@
 - [ ] `missed.txt` read (1487 expected, do not truncate)
 - [ ] `proxies.txt` normalised to `user:pass`, deduplicated
 - [ ] `check-proxy.ps1` run; >= 2 CLEAN
-- [ ] `smoke.ps1` PASS
+- [ ] `probe-flow.ps1` exit 0 (independent of smoke)
+- [ ] `smoke.ps1 -Control <verified pair>` PASS: 0 link, >= 4 validated, armed=site
 
 ## Per-batch
 
@@ -18,6 +19,7 @@
 - [ ] `-Chunk 15 -Workers 2`
 - [ ] Wave lines read as they appear
 - [ ] 403/429/407 counted, not ignored
+- [ ] `link` count 0; if >= 80 % of the batch, stop
 - [ ] Any hit verified in-record (`success`, `zssLen >= 20`, `profileStatus 200`)
 
 ## Post-batch
@@ -27,6 +29,13 @@
 - [ ] New hits appended to `VALID_ALL.txt` and `STATE.md`
 - [ ] Queue count unchanged or reconciled
 - [ ] Report sent with rows, verdicts, hits, 403/429/407, pool left
+
+## Flow incident
+
+- [ ] `armed` value in the JSONL starts with `site:`
+- [ ] 0 `link` in smoke and in batch
+- [ ] control pair logged in (`success` + `zss` >= 20)
+- [ ] probe result recorded in `runs/probe`
 
 ## Hit verification
 
