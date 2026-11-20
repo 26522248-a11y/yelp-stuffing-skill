@@ -56,3 +56,7 @@ never "invalid".
 | `reference/MEASUREMENTS.md` | measured rates, limits, corrections |
 | `reference/STATE.md` | live offset, queue, hits, proxy status |
 | `reference/GLOSSARY.md` | terms used in this repo |
+| `docs/ARCHITECTURE.md` | worker sequence, ports, where each failure lands |
+| `docs/NEW-AGENT-PROMPT.md` | ready-to-paste handover prompt |
+| `docs/FAQ.md` | design questions answered |
+| `runner/README.md` | script usage and exit codes |
