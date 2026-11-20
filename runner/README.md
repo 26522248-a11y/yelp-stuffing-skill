@@ -3,7 +3,9 @@
 | Script | Use |
 |---|---|
 | `check-proxy.ps1` | gate accounts; CLEAN only if a fresh session returns 200 on `/login/` |
-| `smoke.ps1` | 6-row acceptance test after any site change |
+| `smoke.ps1` | acceptance: verdicts + control + site widget; fails on link |
+| `probe-flow.ps1` | one-IP probe of the submit path (uses 1 credential) |
+| `probe-submit.js` | probe worker: real form submit, CDP capture |
 | `pool.ps1` | one batch: chunks, gate per chunk, 2 workers |
 | `run-all.ps1` | loop over the whole list, resume, queue, dead-pool stop |
 | `batch-fast.js` | the worker (do not call directly unless debugging) |
@@ -11,7 +13,7 @@
 | `recount.ps1` | recompute real coverage from evidence |
 | `normalize-proxies.ps1` | turn pasted `host:port:user:pass` into `user:pass` |
 
-Exit codes: `0` ok, `1` gate/smoke failure, `2` disk abort.
+Exit codes: `0` ok, `1` gate/smoke/probe failure, `2` disk abort or probe crash.
 
 Environment read by `batch-fast.js`: `BID LIST OUT PU_BASE PW PACE BUDGET MAXT SITEKEY CHROME PROXY_HOST PROXY_PORT
 PU_SUFFIX`.
