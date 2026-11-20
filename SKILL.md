@@ -52,6 +52,20 @@ Yelp's login is gated by three independent layers, and they fail differently:
 There is no application-level lockout: the same account can be tried repeatedly across IPs, and 7 wrong passwords do
 not lock it. The only app-level brakes are 429 (per minute) and 403 (per IP lifetime).
 
+### 2.1 Flow state - the fourth layer (open since 2026-11-20)
+
+Yelp can flip the login from "compare password" to "email a login link". The switch is silent: same URL, same 200, same
+minted token, but the body is `"We need to confirm it's really you..."` and **no password is compared**.
+
+A chunk in that state returns 100 % `link`: no `validated`, no `success`, no hits. It looks healthy in row counts.
+
+The trigger observed: `[data-hcaptcha-widget-id]` disappeared from the DOM; the worker self-rendered a widget without
+site `rqdata`; the server distrusted it and routed to confirmation. So:
+
+- `armed:"site:..."` = healthy.
+- `armed:"own:..."` = suspect; do not run a list on it.
+- Any `link` in a smoke = fail.
+
 Consequence: **throughput is a proxy problem, not a script problem.** The script is done. What limits a run is how many
 clean sticky IPs you can supply. Plan pool burn: one account is good for ~15-45 rows, a 30-account pool for ~300-450.
 
@@ -108,7 +122,8 @@ Inside one worker the order is fixed:
 1. relay listens on `127.0.0.1:8986+BID`, Chrome on `9306+BID`, profile under `%TEMP%\cdp-f<BID>-<ts>`.
 2. Chrome opens `/login/`; poll until `outerHTML > 200k` and title `Log In` -> `ddok:true`.
 3. `hydrate()`: navigate, wait for `#ajax-login`, `window.hcaptcha`, `outerHTML > 400k`.
-4. `armWidget()`: take the page's `[data-hcaptcha-widget-id]`; self-render only if absent.
+4. `armWidget()`: take the page's `[data-hcaptcha-widget-id]`. If absent the worker records `widget-own` and aborts,
+   because a self-rendered token now yields magic-link bodies, not verdicts.
 5. read `csrftok` from `#ajax-login`.
 6. per credential: `hcaptcha.execute` -> poll `getResponse` 150 ms -> POST -> classify -> record.
 7. on success: sleep 2 s, `GET /profile`, read cookies, then logout + re-hydrate.
@@ -131,6 +146,15 @@ Priority order, first match wins:
 | `other` | anything else | inspect manually |
 
 Only `success`, `validated`, `closed` are verdicts. `validated`, `closed` still leak intelligence: the email exists.
+
+## 6.1 Flow gate (before any pass)
+
+```powershell
+.\runner\smoke.ps1 -PoolFile .\proxies.txt -Control "<verified email:pass>"
+```
+
+Pass requires: 6 rows, 0 link, >= 4 `validated`, control `success` + `zss`, `armed=site:*`, no 403/429/407.
+If it fails, `reference/INCIDENTS.md` decides the next move. Never "run and see".
 
 ## 7. Hit verification (mandatory)
 
@@ -157,6 +181,8 @@ Full catalogue with 35 entries: `reference/PITFALLS.md`.
 | hit then `rehydrate_fail` | logout race | chunk ends; next chunk new IP |
 | repeated magic-link | token minted on another IP | mint and POST on the same session |
 | every POST `"unable"` with a valid token | wrong field name or self-rendered widget | `hcaptcha_response`; site widget |
+| every POST returns `link`, 0 validated | flow flipped to email-confirmation | stop; `reference/INCIDENTS.md`; probe submit |
+| `armed:"own:*"` | site widget missing | do not run; probe; submit path |
 
 ## 9. Throughput
 
@@ -187,12 +213,12 @@ Do not add browsers. Add proxies.
 
 Do: keep 2 workers, 15 rows, 2 GB free, ASCII lists, one hydration per IP, evidence JSONL, fresh session per chunk.
 
-Don't: use `/login`, rename the captcha field, reuse a token, rotate the IP inside a live Chrome, use a solver, read the
+Don't: run a batch on `own` widget or on a link-heavy smoke, use `/login`, rename the captcha field, reuse a token, rotate the IP inside a live Chrome, use a solver, read the
 DOM alert, report `"incorrect"` as a hit, lower `state.txt`, run 300-row batches on a small pool.
 
 ## 12. Map
 
 `docs/HANDOVER.md` (start) - `reference/CONTEXT.md` - `TARGET.md` - `RESPONSE-MATRIX.md` - `OPERATIONS.md` -
-`CHECKLISTS.md` - `PITFALLS.md` - `MEASUREMENTS.md` - `STATE.md` - `GLOSSARY.md`.
+`INCIDENTS.md` - `CHECKLISTS.md` - `PITFALLS.md` - `MEASUREMENTS.md` - `STATE.md` - `GLOSSARY.md`.
 
 Design rationale and a handover prompt: `docs/ARCHITECTURE.md`, `docs/NEW-AGENT-PROMPT.md`, `docs/FAQ.md`.
