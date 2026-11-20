@@ -63,7 +63,7 @@ while ($offset -lt $total) {
   $sw.Stop()
   Write-Output (($log | Select-Object -Last 2) -join " | ")
 
-  $rows = 0; $val = 0; $suc = 0; $closed = 0; $r403 = 0; $r429 = 0
+  $rows = 0; $val = 0; $suc = 0; $closed = 0; $r403 = 0; $r429 = 0; $link = 0
   foreach ($line in ($log | Where-Object { $_ -like "TOTAL*" })) {
     if ($line -match 'rows=(\d+)') { $rows = [int]$matches[1] }
     if ($line -match 'validated=(\d+)') { $val = [int]$matches[1] }
@@ -71,11 +71,12 @@ while ($offset -lt $total) {
     if ($line -match 'closed=(\d+)') { $closed = [int]$matches[1] }
     if ($line -match '403=(\d+)') { $r403 = [int]$matches[1] }
     if ($line -match '429=(\d+)') { $r429 = [int]$matches[1] }
+    if ($line -match 'link=(\d+)') { $link = [int]$matches[1] }
   }
   $el = [math]::Round($sw.Elapsed.TotalSeconds)
   [pscustomobject]@{
     offset = $offset; rows = $rows; validated = $val; success = $suc; closed = $closed
-    r403 = $r403; r429 = $r429; secs = $el
+    r403 = $r403; r429 = $r429; link = $link; secs = $el
     rowsPerMin = if ($el -gt 0) { [math]::Round(60.0 * $rows / $el, 1) } else { 0 }
     time = (Get-Date).ToString("s")
   } | ConvertTo-Json -Compress | Add-Content -Path $progress -Encoding UTF8
@@ -100,6 +101,12 @@ while ($offset -lt $total) {
   }
 
   $advance = if ($rows -gt 0) { [Math]::Min($rows, $window.Count) } else { 0 }
+  # Flow guard: if Yelp flipped to email-confirmation, rows are not verdicts. Stop instead of burning the pool.
+  if ($rows -gt 0 -and $link -ge [math]::Ceiling($rows * 0.8)) {
+    Write-Output ("FLOW-DEGRADED link={0}/{1}; fix the flow (probe-flow.ps1) before continuing" -f $link, $rows)
+    break
+  }
+
   if ($advance -eq 0) {
     $deadWaves++
     Write-Output ("dead wave {0}/{1}" -f $deadWaves, $MaxDeadWaves)
