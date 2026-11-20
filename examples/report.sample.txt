@@ -1,0 +1,8 @@
+unique credentials tested: 4
+  validated    1
+  success      1
+  closed       1
+  unable       1
+verdicts=3 unresolved=1 (25%)
+hits (success + session): 1
+  alice@example.com:Sunset2019!  profile=200 zss=1
