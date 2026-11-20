@@ -13,7 +13,7 @@ bottleneck is proxy supply, not code. Do not rebuild anything.
 | 4 | `SKILL.md` | the rules and the loop |
 | 5 | `reference/TARGET.md` | the target map, so failures are diagnosable |
 | 6 | `reference/OPERATIONS.md` | the daily runbook and stop conditions |
-| 7 | `reference/PITFALLS.md` | 32 ways this has already gone wrong |
+| 7 | `reference/PITFALLS.md` | 35 ways this has already gone wrong |
 
 `reference/RESPONSE-MATRIX.md`, `MEASUREMENTS.md`, `CHECKLISTS.md`, `GLOSSARY.md` are lookup tables.
 
