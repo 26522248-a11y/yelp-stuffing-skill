@@ -26,7 +26,15 @@ $poolScript = Join-Path $PSScriptRoot "pool.ps1"
 $outDir = Join-Path $root (Get-Date -Format "yyyyMMdd-HHmmss")
 New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
-$log = & $poolScript -Source $Source -PoolFile $PoolFile -Skip 0 -Take $Rows -Chunk $Rows -Workers 1 -Pace 14 -OutDir $outDir 2>&1
+# Put the control first, then Rows-1 list rows. The control is the assertion; it must always be exercised.
+$ctrlEmail = ($Control -split ':', 2)[0]
+$body = @()
+if (Test-Path $Source) { $body = @(Get-Content $Source | Where-Object { $_ -match ':' -and $_.Trim() -ne '' }) }
+$scan = @($body | Where-Object { ($_ -split ':', 2)[0] -ne $ctrlEmail })
+$input = Join-Path $outDir "smoke_input.txt"
+@($Control.Trim()) + @($scan | Select-Object -First ([Math]::Max(0, $Rows - 1))) | Set-Content -Encoding ascii $input
+
+$log = & $poolScript -Source $input -PoolFile $PoolFile -Skip 0 -Take $Rows -Chunk $Rows -Workers 1 -Pace 14 -OutDir $outDir 2>&1
 $log | Select-Object -Last 3
 
 $ev = @()
