@@ -39,7 +39,8 @@ Only CLEAN lines stay in the active pool. Expect 30-60 % to survive.
 .\runner\smoke.ps1 -PoolFile .\proxies.txt
 ```
 
-Pass = `SMOKE PASS`, 6 rows, no 403/429/407, <= 1 unknown. Fail: do not start a long pass; consult `PITFALLS.md`.
+Pass = `SMOKE PASS`: 6 rows, 0 link, >= 4 validated, control logged in, `armed=site:*`, no 403/429/407.
+Fail: do not start a long pass; go to `reference/INCIDENTS.md`.
 
 ## 4. Run
 
@@ -61,6 +62,7 @@ Pass = `SMOKE PASS`, 6 rows, no 403/429/407, <= 1 unknown. Fail: do not start a 
 | 2 consecutive waves with < 50 % rows | rotate more aggressively, shrink batch |
 | 2 consecutive 0-row waves | stop, gate the pool again |
 | 3 consecutive 0-row waves | run stops itself; report and request proxies |
+| any batch >= 80 % `link` | `FLOW-DEGRADED`; stop and probe the flow |
 | Disk < 2 GB | clean profiles mid-run, then continue |
 | Chrome count > 2, node > 2 | kill orphans before the next wave |
 
