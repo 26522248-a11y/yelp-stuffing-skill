@@ -254,3 +254,36 @@ Symptom: `[data-hcaptcha-widget-id]` disappears; only `api.js?render=explicit` r
 Cause: Yelp changed the page on 2026-11-20; the widget is now created later, by the submit flow.
 Fix: check the contract before every pass (`probe-flow.ps1`), not just at build time. Contract drift is an incident,
 not a tuning problem.
+
+## 44. Trusting /logout to end the session
+
+Symptom: `GET /logout?return_url=%2Flogin%2F` returns 200, next `/login/` redirects to `/`, no form.
+Cause: logout is state-changing (needs `csrftok` + XHR header) and `/login/` bounces authenticated users.
+Fix: fresh CDP browser context per chunk (`reference/SESSION.md`); CSRF logout as fallback.
+
+## 45. Deleting cookies by name only
+
+Symptom: `Network.deleteCookies zss` and even `clearBrowserCookies` leave `/profile` at 200.
+Cause: a cookie is a (name, domain, path, secure) tuple; the live document keeps JS state; the front end re-issues
+session cookies on the next XHR.
+Fix: delete with explicit `.yelp.com`, then navigate for a cold check; or isolate with a browser context.
+
+## 46. Concluding from a live /profile call
+
+Symptom: "the session survives everything" because `/profile` returns 200 after the reset attempt.
+Cause: the call runs inside the still-authenticated document, possibly from cache.
+Fix: `Network.setCacheDisabled true`, `Page.navigate('/login/')`, check for `#ajax-login`. Status from the old document
+proves nothing.
+
+## 47. Blaming the target for a path-specific regression
+
+Symptom: a whole run returns `link`; conclusion: "Yelp changed globally".
+Cause: the synthetic mint path was used on a page where the site widget is now lazy. The real submit path still
+compared 3/3 passwords.
+Fix: probe both paths before declaring a global change; classify it as path-specific until the submit path also fails.
+
+## 48. Reading `require_link` as link when a password was compared
+
+Symptom: `validated` rows counted as `link`, hit/verdict stats skewed.
+Cause: Yelp sets `require_link` even on a compared-and-rejected password.
+Fix: check `error_fields`/`incorrect` first; only classify `link` when no comparison happened.
