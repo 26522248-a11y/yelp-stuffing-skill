@@ -31,10 +31,10 @@ $ctrlEmail = ($Control -split ':', 2)[0]
 $body = @()
 if (Test-Path $Source) { $body = @(Get-Content $Source | Where-Object { $_ -match ':' -and $_.Trim() -ne '' }) }
 $scan = @($body | Where-Object { ($_ -split ':', 2)[0] -ne $ctrlEmail })
-$input = Join-Path $outDir "smoke_input.txt"
-@($Control.Trim()) + @($scan | Select-Object -First ([Math]::Max(0, $Rows - 1))) | Set-Content -Encoding ascii $input
+$inputFile = Join-Path $outDir "smoke_input.txt"
+@($Control.Trim()) + @($scan | Select-Object -First ([Math]::Max(0, $Rows - 1))) | Set-Content -Encoding ascii $inputFile
 
-$log = & $poolScript -Source $input -PoolFile $PoolFile -Skip 0 -Take $Rows -Chunk $Rows -Workers 1 -Pace 14 -OutDir $outDir 2>&1
+$log = & $poolScript -Source $inputFile -PoolFile $PoolFile -Skip 0 -Take $Rows -Chunk $Rows -Workers 1 -Pace 14 -OutDir $outDir 2>&1
 $log | Select-Object -Last 3
 
 $ev = @()
