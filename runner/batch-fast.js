@@ -179,6 +179,7 @@ function paceDelay() {
     },150);
   })`);
 
+  // hydration is retried; widget absence is not retried here (see armWidget)
   let ok = await hydrate(4);
   rec({ event: 'hydrated', ok });
   if (!ok) { rec({ event: 'abort', why: 'hydrate' }); chrome.kill(); relay.close(); return; }
@@ -186,6 +187,10 @@ function paceDelay() {
   const armed = await armWidget();
   rec({ event: 'widget', armed });
   if (String(armed).startsWith('err') || armed === 'no-api') { rec({ event: 'abort', why: 'widget' }); chrome.kill(); relay.close(); return; }
+  // A self-rendered widget has no site rqdata. Since 2026-11-20 Yelp answers such tokens with a magic link
+  // instead of a verdict, so the whole chunk is wasted unless the submit path is used. Fail closed.
+  const ownWidget = String(armed).startsWith('own');
+  if (ownWidget && process.env.ALLOW_OWN !== '1') { rec({ event: 'abort', why: 'widget-own' }); chrome.kill(); relay.close(); return; }
 
   let csrf = await ev(`(function(){var i=document.querySelector('#ajax-login input[name=csrftok]');return i?i.value:'';})()`);
   rec({ event: 'csrf', len: (csrf || '').length });
@@ -274,7 +279,7 @@ function paceDelay() {
   }
 
   const avg = a => a.length ? Math.round(a.reduce((x, y) => x + y, 0) / a.length) : 0;
-  rec({ event: 'summary', mode: 'fast', processed: msAll.length, posted, validated, success, unable, link, closed, unknown,
+  rec({ event: 'summary', mode: 'fast', armed, ownWidget, processed: msAll.length, posted, validated, success, unable, link, closed, unknown,
         r429, r403, r407, tokFail, blocked, paceSleepMs, avgTokMs: avg(tokAll), avgPostMs: avg(postAll), avgMs: avg(msAll),
         secs: Math.round((Date.now() - t0) / 1000), successes });
 
