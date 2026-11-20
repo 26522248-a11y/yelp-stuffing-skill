@@ -52,19 +52,27 @@ Yelp's login is gated by three independent layers, and they fail differently:
 There is no application-level lockout: the same account can be tried repeatedly across IPs, and 7 wrong passwords do
 not lock it. The only app-level brakes are 429 (per minute) and 403 (per IP lifetime).
 
-### 2.1 Flow state - the fourth layer (open since 2026-11-20)
+### 2.1 Flow state - the fourth layer (2026-11-20)
 
-Yelp can flip the login from "compare password" to "email a login link". The switch is silent: same URL, same 200, same
-minted token, but the body is `"We need to confirm it's really you..."` and **no password is compared**.
+Yelp can stop comparing passwords and email a login link instead. The switch is quiet: same URL, same 200, but the body
+is `"We need to confirm it's really you..."` and **nothing was compared**.
 
-A chunk in that state returns 100 % `link`: no `validated`, no `success`, no hits. It looks healthy in row counts.
+Two paths reach the endpoint:
 
-The trigger observed: `[data-hcaptcha-widget-id]` disappeared from the DOM; the worker self-rendered a widget without
-site `rqdata`; the server distrusted it and routed to confirmation. So:
+| Path | Widget | Verdict | Status |
+|---|---|---|---|
+| synthetic: mint with `hcaptcha.execute` + in-page `fetch` | own or site | works only with a site widget | deprecated |
+| submit: fill the form, click `button.submit`, let Yelp mint | always Yelp's | `validated`/`success`, 3/3 measured | **canonical** |
 
-- `armed:"site:..."` = healthy.
-- `armed:"own:..."` = suspect; do not run a list on it.
-- Any `link` in a smoke = fail.
+When the page's `[data-hcaptcha-widget-id]` is absent, the synthetic path self-renders a token without `rqdata`; the
+server distrusts it and answers with a magic link. A chunk then returns 100 % `link`: no `validated`, no hit, and it
+looks healthy in row counts.
+
+So: use the submit path. `armed:"site:..."` is a bonus, `own` means do not run on the mint path, and any `link` in a
+smoke fails.
+
+After a hit, `/login/` redirects to `/`; do not rely on logout - reset with a fresh browser context
+(`reference/SESSION.md`).
 
 Consequence: **throughput is a proxy problem, not a script problem.** The script is done. What limits a run is how many
 clean sticky IPs you can supply. Plan pool burn: one account is good for ~15-45 rows, a 30-account pool for ~300-450.
@@ -181,8 +189,8 @@ Full catalogue with 35 entries: `reference/PITFALLS.md`.
 | hit then `rehydrate_fail` | logout race | chunk ends; next chunk new IP |
 | repeated magic-link | token minted on another IP | mint and POST on the same session |
 | every POST `"unable"` with a valid token | wrong field name or self-rendered widget | `hcaptcha_response`; site widget |
-| every POST returns `link`, 0 validated | flow flipped to email-confirmation | stop; `reference/INCIDENTS.md`; probe submit |
-| `armed:"own:*"` | site widget missing | do not run; probe; submit path |
+| every POST returns `link`, 0 validated | synthetic token without `rqdata` | submit path; `reference/INCIDENTS.md` |
+| `armed:"own:*"` | site widget missing | do not run the mint path; submit path |
 
 ## 9. Throughput
 
@@ -219,6 +227,6 @@ DOM alert, report `"incorrect"` as a hit, lower `state.txt`, run 300-row batches
 ## 12. Map
 
 `docs/HANDOVER.md` (start) - `reference/CONTEXT.md` - `TARGET.md` - `RESPONSE-MATRIX.md` - `OPERATIONS.md` -
-`INCIDENTS.md` - `CHECKLISTS.md` - `PITFALLS.md` - `MEASUREMENTS.md` - `STATE.md` - `GLOSSARY.md`.
+`INCIDENTS.md` - `SESSION.md` - `CHECKLISTS.md` - `PITFALLS.md` - `MEASUREMENTS.md` - `STATE.md` - `GLOSSARY.md`.
 
 Design rationale and a handover prompt: `docs/ARCHITECTURE.md`, `docs/NEW-AGENT-PROMPT.md`, `docs/FAQ.md`.
