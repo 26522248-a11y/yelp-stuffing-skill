@@ -22,7 +22,7 @@ Start here: [`docs/HANDOVER.md`](docs/HANDOVER.md).
 | Resumed offset | `runs/state.txt` = **3320** (rows with evidence 1,783; gap rows queued) |
 | Re-check queue | `runs/missed.txt` = **1487 rows** |
 | Verified hits | **21** (see `reference/STATE.md`) |
-| Proxy pool | **empty** â every supplied account is at 407 quota or burned |
+| Proxy pool | **empty** Ã¢ÂÂ every supplied account is at 407 quota or burned |
 | Next action | add proxies -> `normalize-proxies.ps1` -> `check-proxy.ps1` -> resume |
 
 ## Quick start
@@ -52,7 +52,7 @@ never "invalid".
 | `reference/RESPONSE-MATRIX.md` | every observed body/status and its meaning |
 | `reference/OPERATIONS.md` | daily runbook, stop conditions, escalation |
 | `reference/CHECKLISTS.md` | pre-run, per-batch, post-run, report |
-| `reference/PITFALLS.md` | 35 failure modes, symptom -> cause -> fix |
+| `reference/PITFALLS.md` | 38 failure modes, symptom -> cause -> fix |
 | `reference/MEASUREMENTS.md` | measured rates, limits, corrections |
 | `reference/STATE.md` | live offset, queue, hits, proxy status |
 | `reference/GLOSSARY.md` | terms used in this repo |
@@ -60,3 +60,4 @@ never "invalid".
 | `docs/NEW-AGENT-PROMPT.md` | ready-to-paste handover prompt |
 | `docs/FAQ.md` | design questions answered |
 | `runner/README.md` | script usage and exit codes |
+| `reference/AUDIT.md` | fidelity audit, defects found and closed |
