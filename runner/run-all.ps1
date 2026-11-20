@@ -4,7 +4,7 @@ param(
   [Alias('Skip')][int]$StartAt = 0,
   [int]$Take = 150,
   [int]$Chunk = 15,
-  [int]$Workers = 2,
+  [int]$Workers = 4,
   [int]$Pace = 14,
   [int]$MaxDeadWaves = 3,
   [string]$Root = ".\runs"

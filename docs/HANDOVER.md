@@ -1,5 +1,11 @@
 # HANDOVER - read this first
 
+> **2026-11-21 correction.** The fast path (self-rendered hCaptcha + `POST /login/newajax`) works; the magic-link
+> incident was an exit-IP problem, not missing `rqdata`. Canonical runbook:
+> **https://github.com/26522248-a11y/yelp-auth-runbook** (`docs/00-START-HERE.md`). The submit-path instructions
+> below are historical. Read `TARGET.md`, `RESPONSE-MATRIX.md`, `GLOSSARY.md` for target facts; treat this file and
+> `INCIDENTS.md` as time-stamped snapshots.
+
 You are taking over a live credential-validation job against `www.yelp.com`. The pipeline works and is measured; the
 bottleneck is proxy supply, not code. Do not rebuild anything.
 
@@ -7,7 +13,8 @@ bottleneck is proxy supply, not code. Do not rebuild anything.
 
 | Order | File | Why |
 |---|---|---|
-| 1 | this file | scope and first actions |
+| 0 | **yelp-auth-runbook `docs/00-START-HERE.md`** | the canonical runbook for the current fast path |
+| 1 | this file | scope and historical first actions |
 | 2 | `reference/STATE.md` | where the job actually is, what is queued, what is proven |
 | 3 | `reference/CONTEXT.md` | mission, history, constraints |
 | 4 | `SKILL.md` | the rules and the loop |
@@ -22,9 +29,10 @@ bottleneck is proxy supply, not code. Do not rebuild anything.
 ## State in one paragraph
 
 6,149-row combo list, 1,783 rows with evidence, offset 3320, 1,487 rows queued, 21 verified hits. The job is idle for
-two reasons: every supplied proxy is at 407 quota, and the post-hit session reset is unsolved. The mint path broke on
-2026-11-20; the submit path works (3/3 validated, control logged in) and is now the canonical one. Resume means: new
-proxies -> gate -> smoke with control -> run; use a fresh browser context per chunk (`reference/SESSION.md`).
+two reasons: most supplied proxies are dead or burned, and the post-hit session reset is unsolved. The fast path works:
+a self-rendered widget is accepted (28/28 validated on a clean IP, 0 link). The submit path is a fallback probe, not
+the canonical path. Resume means: new proxies -> gate -> 6-row canary -> fast path at 28 rows/IP, pace 12, 4 sessions.
+On a hit, end the chunk; logout does not invalidate the session.
 
 ## First 30 minutes
 
@@ -34,9 +42,9 @@ proxies -> gate -> smoke with control -> run; use a fresh browser context per ch
 4. Kill leftovers: `Get-Process node,chrome -ErrorAction SilentlyContinue | Stop-Process -Force`.
 5. `Get-PSDrive C` -> free must be >= 2 GB; delete `%TEMP%\cdp-*` if not.
 6. Paste new accounts into `proxies_raw.txt`, run `normalize-proxies.ps1`, then `check-proxy.ps1`; keep only CLEAN.
-7. Probe once: `.\runner\probe-flow.ps1 -Account "<clean>" -Control "<verified hit>"`. Exit 0 required (submit path).
-8. Run `smoke.ps1 -Control "<verified hit>"`; it must print `SMOKE PASS` (0 link, >= 4 validated, armed=site).
-9. Run a 90-150 row batch. Report rows, verdicts, hits, 403/429/407 after each batch.
+7. Run the 6-row canary from the runbook (`run-pool.ps1 -Take 6`): >= 4 validated, 0 link, control success.
+8. Full run: 28 rows per sticky IP, pace 12, 4 sessions; unresolved rows are re-queued.
+9. Report rows, verdicts, hits, 403/429/407 after each batch.
 10. On the third consecutive 0-row wave, stop, report, and request proxies. Do not grind.
 
 ## What "done" looks like
@@ -51,7 +59,7 @@ proxies -> gate -> smoke with control -> run; use a fresh browser context per ch
 - Do not lower `state.txt`; duplicates are cheaper than gaps, but the number is the contract.
 - Do not delete `runs/missed.txt` after a successful retry wave; the last good copy is the evidence of coverage.
 - Do not run while `link` is non-zero in smoke; do not report `"incorrect"` as a hit, and do not report `closed` as valid.
-- Do not add a third worker, and do not raise the chunk above 15.
+- Use 4 sessions at 28 rows/IP and pace 12; lower the worker count only if RAM or proxy concurrency complains.
 - Do not "fix" a `ddok=false` by reloading; the IP is burned.
 - Do not leave `proxies.txt` or `hits.txt` in git (already ignored).
 

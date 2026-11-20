@@ -77,4 +77,4 @@ derived.
 - **In-page fetch instead of a form submit:** no React state, no button race, no navigation, body stays readable.
 - **One page per browser:** `Target.getTargets` picks the first `page`; extra tabs break attachment.
 - **Relaunch instead of rotate:** tearing down the relay under a live Chrome kills its network service.
-- **15 rows per IP:** sits under both known ceilings (16/min, 30/IP) with margin.
+- **28 rows per IP at pace 12:** sits under both known ceilings (~15/min, ~30/IP) with margin.

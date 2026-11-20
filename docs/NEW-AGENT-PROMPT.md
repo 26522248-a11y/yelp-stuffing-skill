@@ -18,11 +18,11 @@ Read, in this order, before any request:
   reference/OPERATIONS.md
 
 Then follow the state file. Do not rebuild the pipeline, do not change constants
-(15 rows/IP, 2 workers, /login/, hcaptcha_response, 2 GB disk floor), and do not
+(28 rows/IP at pace 12, 4 sessions, /login/, hcaptcha_response, 2 GB disk floor), and do not
 lower runs/state.txt or truncate runs/missed.txt.
 
 If the proxy pool is empty, gate whatever proxies.txt holds, keep only CLEAN,
-run smoke.ps1, then resume run-all.ps1 with a batch of ceil(clean/2)*15 rows.
+run the 6-row canary, then resume with a batch of clean_accounts * 28 rows and re-queue unresolved rows.
 Report rows, validated, closed, valid, 403, 429, 407 and pool left after each
 batch. Stop after 3 consecutive 0-row waves.
 

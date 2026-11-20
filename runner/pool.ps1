@@ -4,7 +4,7 @@ param(
   [int]$Skip = 0,
   [int]$Take = 150,
   [int]$Chunk = 15,          # POST per IP before rotation; 15 keeps under the 429 window
-  [int]$Workers = 2,         # 2 measured stable on 4 vCPU; 3 collapses
+  [int]$Workers = 4,         # 2 was the floor on 4 vCPU/4 GB; this box is 6C/32 GB
   [int]$Pace = 14,
   [int]$MaxAccountTries = 6, # cap health-gate attempts per worker slot
   [string]$ProxyHost = "pr.oxylabs.io",
@@ -33,9 +33,9 @@ $runner = Join-Path $PSScriptRoot "batch-fast.js"
 if (-not (Test-Path $runner)) { throw "runner not found: $runner" }
 New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
 
-$pool = Get-Content $PoolFile | Where-Object { $_ -match ':' -and $_.Trim() -ne '' } | ForEach-Object {
+$pool = @(Get-Content $PoolFile | Where-Object { $_ -match ':' -and $_.Trim() -ne '' } | ForEach-Object {
   $i = $_.IndexOf(':'); [pscustomobject]@{ user = $_.Substring(0, $i); pass = $_.Substring($i + 1) }
-}
+})
 if ($pool.Count -lt $Workers) { throw "pool needs at least $Workers accounts" }
 
 $lines = Get-Content $Source | Where-Object { $_ -match ':' -and $_.Trim() -ne '' } | Select-Object -Skip $Skip -First $Take

@@ -39,13 +39,13 @@ Only CLEAN lines stay in the active pool. Expect 30-60 % to survive.
 .\runner\smoke.ps1 -PoolFile .\proxies.txt
 ```
 
-Pass = `SMOKE PASS`: 6 rows, 0 link, >= 4 validated, control logged in, `armed=site:*`, no 403/429/407.
-Fail: do not start a long pass; go to `reference/INCIDENTS.md`.
+Pass = 6 rows, 0 link, >= 4 validated, control logged in, `armed=own:*` or `site:*`, no 403/429/407.
+Fail: rotate the exit IP first; do not start a long pass.
 
 ## 4. Run
 
 ```powershell
-.\runner\run-all.ps1 -Source "$env:TEMP\opencode\combo.bin" -PoolFile .\proxies.txt -Take 150 -Chunk 15 -Workers 2
+.\runner\run-all.ps1 -Source "$env:TEMP\opencode\combo.bin" -PoolFile .\proxies.txt -Take 150 -Chunk 28 -Workers 4
 ```
 
 - `-Take` is the batch (10 chunks), not a target.

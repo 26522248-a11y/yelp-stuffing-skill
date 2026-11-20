@@ -11,12 +11,12 @@
 - [ ] `proxies.txt` normalised to `user:pass`, deduplicated
 - [ ] `check-proxy.ps1` run; >= 2 CLEAN
 - [ ] `probe-flow.ps1` exit 0 (independent of smoke)
-- [ ] `smoke.ps1 -Control <verified pair>` PASS: 0 link, >= 4 validated, armed=site
+- [ ] 6-row canary PASS: 0 link, >= 4 validated, armed=own or site
 
 ## Per-batch
 
-- [ ] Batch size <= (clean accounts / 2) * 15
-- [ ] `-Chunk 15 -Workers 2`
+- [ ] Batch size <= clean accounts * 28
+- [ ] `-Chunk 28 -Workers 4` at pace 12
 - [ ] Wave lines read as they appear
 - [ ] 403/429/407 counted, not ignored
 - [ ] `link` count 0; if >= 80 % of the batch, stop

@@ -28,7 +28,7 @@
 | **offset** | next row in `state.txt` |
 | **zss** | 30-char session cookie proving login |
 | **CSRF** | `csrftok` field from `#ajax-login` |
-| **rqdata** | hCaptcha site metadata; absent in self-rendered widgets |
+| **rqdata** | hCaptcha site metadata; not required here - Yelp's own render passes none |
 | **relay** | local CONNECT proxy that injects Oxylabs auth |
 | **CDP** | Chrome DevTools Protocol, used over WebSocket |
 | **BID** | worker index; shifts the relay and CDP ports |

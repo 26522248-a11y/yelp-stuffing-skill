@@ -42,8 +42,8 @@ Class: `closed`. Email exists; the account is deactivated. Useful for the report
 {"errors":["We're unable to log you in right now."]}
 ```
 
-Class: `unable`. Nothing was compared. Causes: missing/renamed token, rejected token, cross-IP token, self-rendered
-widget without `rqdata`, exhausted risk budget.
+Class: `unable`. Nothing was compared. Causes: missing/renamed token, rejected token, cross-IP token, **burned exit
+IP**, exhausted risk budget. `rqdata` is not one of them.
 
 Distinguish from `validated` by the absence of `error_fields`.
 

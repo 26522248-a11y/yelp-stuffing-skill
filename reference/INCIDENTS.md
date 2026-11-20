@@ -1,11 +1,17 @@
 # Incident: auth flow flipped to magic-link (2026-11-20)
 
-Status: **root cause fixed** via submit path; not a global change. Session reset still open: `reference/SESSION.md`.
+Status: **closed 2026-11-21 - path- and IP-specific, not a global change.**
+Canonical runbook: https://github.com/26522248-a11y/yelp-auth-runbook (`docs/00-START-HERE.md`).
 
-Update 2026-11-20: the worker was ported to the real submit path. 3/3 wrong passwords returned `validated`, 1 account
-came back `closed`, control `klusmulezi` logged in (`success` + `zss` 30 + `/profile` 200), `link` = 0, 403/429 = 0.
-The magic-link body was specific to synthetic tokens without `rqdata`, not a global flow change. The fetch path stays
-deprecated while the site widget is lazy.
+> **CORRECTION (2026-11-21).** The `rqdata` explanation below is wrong. Yelp's own `hCaptcha.render` passes
+> `{size:'invisible', sitekey, reCaptchaCompat:false}` - no `rqdata` - and a self-rendered token validates 28/28 on a
+> clean exit IP. The magic-link was an exit-IP signal: the same accounts return `link` on a burned mobile exit and
+> `validated` on a clean AT&T exit. The fast path is canonical; the submit path is a fallback probe. Read the rest of
+> this file as the historical record of how the incident was diagnosed, not as current instructions.
+
+Update 2026-11-20: the worker was ported to the real submit path as a probe. 3/3 wrong passwords returned `validated`,
+which proved the endpoint still compares passwords. That conclusion is still true; the `rqdata` cause attached to it
+is not.
 
 ## Symptom
 

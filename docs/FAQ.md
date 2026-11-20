@@ -9,16 +9,16 @@ They add a dependency and a second automation surface. The runner drives CDP dir
 already in Node 22, and the relay is 30 lines. Fewer moving parts, no version drift.
 
 **Why headful?**
-The invisible widget is tied to a real rendering context and a real `rqdata`. Headless gets challenged more and the
-site widget is often missing.
+A real rendering context is still safer, but not because of `rqdata`: Yelp's own `hCaptcha.render` passes no `rqdata`,
+and a self-rendered token is accepted on a clean IP. Headless gets challenged more and the page hydrates less reliably.
 
 **Why mobile proxies?**
 DataDome scores datacenter ranges heavily. Fresh mobile US/CA IPs survive 15-30 POST; datacenter often fails the first
 one.
 
-**Why exactly 15 rows?**
-Two measured ceilings: 429 at ~16 POST/min and 403 at ~32 POST/IP. 15 gives margin under both and removes the need for
-pacing sleeps on clean pools.
+**Why 28 rows per IP at pace 12?**
+Two measured ceilings: 429 above ~15 POST/min and 403 from ~30-32 POST per sticky IP. 28 rows at 12/min stays under
+both; the first 15-row setting was a conservative floor, not a limit.
 
 **Why relaunch Chrome per chunk instead of switching the proxy?**
 Destroying the relay tunnel under a live Chrome leaves its network service unable to reconnect; four fresh IPs in a row
@@ -37,7 +37,7 @@ The email exists but the account is deactivated. Intelligence, not a hit.
 Accounts are not locked out. The limit is per IP, not per account, so a hit can be replayed for verification.
 
 **How do I scale beyond 30 rows/min?**
-More clean IPs, not more browsers. Two workers already saturate 4 GB RAM; each extra IP adds ~15 rows.
+More clean IPs, not more browsers. Four sessions fit in 32 GB RAM and add ~28 rows each; lower to 2 on a 4 GB box.
 
 **How many accounts per pass?**
 About one per 15-45 rows. A 30-account pool is one 300-450 row pass; expect 407 after that.

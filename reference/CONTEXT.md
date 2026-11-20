@@ -26,7 +26,7 @@ driven at mass scale, not to use the accounts. Nothing is written, reviewed, or 
 
 | When | What | Result |
 |---|---|---|
-| 2026-11-19 early | 8-credential list, form path | 1 hit (`klusmulezi`), 0 captcha, 22 attempts |
+| 2026-11-19 early | 8-credential list, form path | 1 hit (control pair), 0 captcha, 22 attempts |
 | 2026-11-19 | first 300 rows | 1 hit, 19 closed, 15 unable, 17x429, 61x403 |
 | 2026-11-19 | rows 301-400 | 0 hits, 82 rejected, proxy pool burned |
 | 2026-11-19 | fast path built (in-page token + fetch) | 2.44 s/row, but 429 at row 16 revealed the real limit |

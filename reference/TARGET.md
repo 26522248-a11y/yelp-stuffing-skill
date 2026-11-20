@@ -86,11 +86,11 @@ Hydration gate: `#ajax-login` exists, `window.hcaptcha` exists, `outerHTML.lengt
 | Solve time | 0.8-2.1 s, no interaction |
 | Token length | ~800-2,100 chars |
 | Lifetime | 1-2 min, single use |
-| Binding | not IP-bound for validity, but cross-IP POST switches the flow to a magic link |
+| Binding | exit-IP reputation decides `validated` vs `link`; mint and POST on the same session |
 | Failure | returns a token of length 0 within 24 s |
 
-A self-rendered widget mints fine but lacks the site `rqdata`; if the page widget is missing, the token is usually
-rejected. Always `[data-hcaptcha-widget-id]` first.
+A self-rendered widget is accepted. Yelp's own `hCaptcha.render` passes no `rqdata` either; the token is not the
+discriminator, the exit IP is. Use `[data-hcaptcha-widget-id]` when present, otherwise render your own.
 
 ## Defenses, in order of appearance
 

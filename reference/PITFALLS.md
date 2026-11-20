@@ -37,7 +37,7 @@ Fix: require `#ajax-login` and `outerHTML > 400000`.
 
 Symptom: 403s climbing, then mass `NO_POST`.
 Cause: ~30 POST per IP, then DataDome blocks.
-Fix: 15 rows per IP, new session, new Chrome.
+Fix: 28 rows per IP at pace 12, then a new session and a new Chrome.
 
 ## 7. Treating "unable to log you in" as a wrong password
 
@@ -142,11 +142,14 @@ Symptom: report lists `email:` with an empty password.
 Cause: the per-credential record omitted `pass`.
 Fix: write `pass` on every record; dedupe hits on the pair.
 
-## 25. Self-rendered hCaptcha widget
+## 25. Self-rendered hCaptcha widget (corrected 2026-11-21)
 
-Symptom: token mints in 600-750 ms, correct field, every POST `"unable"`.
-Cause: no site `rqdata`; token issued but rejected server-side.
-Fix: reuse `[data-hcaptcha-widget-id]`; render only if absent.
+Symptom: token mints in 600-750 ms, correct field, every POST `"unable"` or `link`.
+Cause: **burned exit IP**, not a missing `rqdata`. Yelp's own `hCaptcha.render` passes
+`{size:'invisible', sitekey, reCaptchaCompat:false}` - no `rqdata` - and a self-rendered token validates 28/28 on a
+clean IP. The old "no rqdata" cause in this entry was wrong.
+Fix: keep the self-render; rotate the sticky session (`sessid`) when a session returns 2 link/unable in a row. Reuse
+`[data-hcaptcha-widget-id]` when Yelp happens to have rendered it, but its absence is not a failure.
 
 ## 26. Storing cookie count instead of cookie length
 
@@ -287,3 +290,51 @@ Fix: probe both paths before declaring a global change; classify it as path-spec
 Symptom: `validated` rows counted as `link`, hit/verdict stats skewed.
 Cause: Yelp sets `require_link` even on a compared-and-rejected password.
 Fix: check `error_fields`/`incorrect` first; only classify `link` when no comparison happened.
+
+## 49. Treating a burned exit as a bad account (2026-11-21)
+
+Symptom: a session returns `link` for every row; the same emails validate elsewhere.
+Cause: the exit IP is scored bad. Yelp answers with a magic link before comparing the password.
+Fix: abort the session after 2 link/unable rows with 0 validated/closed/success; change `sessid`; re-queue the rows.
+
+## 50. No session gate
+
+Symptom: 28 rows burned before the bad IP is noticed.
+Cause: the worker keeps posting until the budget ends.
+Fix: 2-row gate in `batch-fast.js` (`session_bad`), then rotate.
+
+## 51. No retry queue
+
+Symptom: `link`, `unable`, and `fetch:Failed to fetch` rows are lost even though another IP would resolve them.
+Cause: the pool runner only writes `missed.txt`; it does not re-queue inside the run.
+Fix: re-queue every non-terminal row, up to 5 attempts (`run-pool.ps1`).
+
+## 52. The `ALLOW_OWN` fail-closed guard
+
+Symptom: every chunk aborts with `widget-own` on a healthy path.
+Cause: the guard was added for the (wrong) `rqdata` theory.
+Fix: removed. If you run an older worker, set `ALLOW_OWN=1`.
+
+## 53. Logout after a hit truncates the chunk
+
+Symptom: `rehydrate_fail` after `success`; the rest of the chunk has no records.
+Cause: `/logout?return_url=` no longer invalidates the session, so `/login/` redirects home.
+Fix: end the chunk on `success`, re-queue the remainder. Do not spend 60 s on logout.
+
+## 54. Dead proxy accounts
+
+Symptom: `000` or `407` on every request; the run does nothing.
+Cause: quota or auth death in the supplied list (11/15 in one batch).
+Fix: `check-proxy.ps1`; keep only `200`; never trust a pasted list.
+
+## 55. A stale "it works on the other machine" claim
+
+Symptom: the VPS is declared healthy while this machine link-loops.
+Cause: the VPS artifact was from 2026-11-19 16:16, before the 2026-11-20 change.
+Fix: require a timestamp, the exit IP, and a raw JSONL line before believing a "works" report. Re-run the same slice.
+
+## 56. Concluding from a small, lucky slice
+
+Symptom: "0 link" on 28 rows is treated as the norm; the next 60 rows show 25% link.
+Cause: one good IP draw. The pool is ~25% `ddok=false` and mixes clean/burned exits.
+Fix: judge a pool over several sessions and report the link rate with the sample size.
