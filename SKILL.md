@@ -192,3 +192,5 @@ DOM alert, report `"incorrect"` as a hit, lower `state.txt`, run 300-row batches
 
 `docs/HANDOVER.md` (start) - `reference/CONTEXT.md` - `TARGET.md` - `RESPONSE-MATRIX.md` - `OPERATIONS.md` -
 `CHECKLISTS.md` - `PITFALLS.md` - `MEASUREMENTS.md` - `STATE.md` - `GLOSSARY.md`.
+
+Design rationale and a handover prompt: `docs/ARCHITECTURE.md`, `docs/NEW-AGENT-PROMPT.md`, `docs/FAQ.md`.
