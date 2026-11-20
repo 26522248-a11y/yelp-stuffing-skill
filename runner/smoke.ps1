@@ -1,16 +1,21 @@
 param(
   [Parameter(Mandatory=$true)][string]$PoolFile,
   [string]$Source = "",
+  [Parameter(Mandatory=$true)][string]$Control,
   [int]$Rows = 6,
-  [int]$MaxUnknown = 1
+  [int]$MaxUnknown = 1,
+  [int]$MaxLink = 0,
+  [switch]$AllowOwnWidget
 )
 
-# Post-change smoke test: prove the page still hydrates, the widget still mints, and
-# /login/newajax still returns classified bodies. Run after any Yelp UI change and
-# before a long pass. Uses its own run root, so state.txt of the real run is untouched.
+# Acceptance gate. Proves FOUR things, not just "no 403":
+#   1. the page hydrates and the SITE widget is in the DOM (own widget = token without rqdata)
+#   2. Yelp still COMPARES passwords (>= 4 validated) - a real control must also log in
+#   3. the auth flow is still password, not email-confirmation (link == 0)
+#   4. no 403/429/407 and all rows return
 #
-# Default source is examples/combo.sample.txt (fake addresses): a pass proves the
-# pipeline, not a hit. Point -Source at a real short list to also prove verdicts.
+# -Control = a verified pair from reference/STATE.md. Without a control, success is not proven.
+# Run after ANY site change, before every pass. Own run root, real state untouched.
 
 $ErrorActionPreference = "Stop"
 $root = Join-Path (Join-Path $PSScriptRoot "..") "runs\smoke"
@@ -24,21 +29,36 @@ New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 $log = & $poolScript -Source $Source -PoolFile $PoolFile -Skip 0 -Take $Rows -Chunk $Rows -Workers 1 -Pace 14 -OutDir $outDir 2>&1
 $log | Select-Object -Last 3
 
-$line = $log | Where-Object { $_ -like "TOTAL*" } | Select-Object -Last 1
-$rowsDone = 0; $r403 = 0; $r429 = 0; $r407 = 0; $unknown = 0
-if ($line -match 'rows=(\d+)') { $rowsDone = [int]$matches[1] }
-if ($line -match '403=(\d+)') { $r403 = [int]$matches[1] }
-if ($line -match '429=(\d+)') { $r429 = [int]$matches[1] }
-if ($line -match '407=(\d+)') { $r407 = [int]$matches[1] }
-if ($line -match 'unknown=(\d+)') { $unknown = [int]$matches[1] }
+$ev = @()
+foreach ($f in (Get-ChildItem $outDir -Filter *.jsonl -ErrorAction SilentlyContinue)) {
+  $ev += @(Get-Content $f.FullName | ForEach-Object { try { $_ | ConvertFrom-Json } catch {} })
+}
+$j = @($ev | Where-Object { $_.email })
+$armed = ($ev | Where-Object { $_.event -eq 'widget' } | Select-Object -First 1).armed
+$rowsDone = $j.Count
+$val = @($j | Where-Object { $_.validated }).Count
+$suc = @($j | Where-Object { $_.success }).Count
+$link = @($j | Where-Object { $_.link }).Count
+$unknown = @($j | Where-Object { -not $_.validated -and -not $_.success -and -not $_.link -and -not $_.closed -and -not $_.unable -and -not $_.status }).Count
+$r403 = @($j | Where-Object { $_.status -eq 403 }).Count
+$r429 = @($j | Where-Object { $_.status -eq 429 }).Count
+$r407 = @($j | Where-Object { $_.status -eq 407 }).Count
+$ctl = @($j | Where-Object { $_.email -eq ($Control -split ':', 2)[0] } | Select-Object -First 1)
 
 $fail = @()
 if ($rowsDone -lt $Rows) { $fail += "rows=$rowsDone/$Rows" }
 if ($r403 -gt 0) { $fail += "403=$r403" }
 if ($r429 -gt 0) { $fail += "429=$r429" }
 if ($r407 -gt 0) { $fail += "407=$r407 (quota)" }
-if ($unknown -gt $MaxUnknown) { $fail += "unknown=$unknown > $MaxUnknown" }
+if ($unknown -gt $MaxUnknown) { $fail += "unknown=$unknown" }
+if ($link -gt $MaxLink) { $fail += "link=$link/$rowsDone (email-confirm flow)" }
+if ($val -lt [math]::Ceiling($Rows * 0.6)) { $fail += "validated=$val/$Rows (password not compared)" }
+if (-not $ctl) { $fail += "control missing from output" }
+elseif (-not $ctl.success -or -not ($ctl.zssLen -ge 20)) { $fail += "control did not log in (profile=$($ctl.profileStatus) zss=$($ctl.zssLen))" }
+if (-not $armed) { $fail += "no widget event" }
+elseif ($armed -notlike "site:*" -and -not $AllowOwnWidget) { $fail += "armed=$armed (own widget, no rqdata)" }
 
+Write-Output ("armed=$armed validated=$val success=$suc link=$link unknown=$unknown 403=$r403 429=$r429 407=$r407")
 if ($fail.Count -gt 0) { Write-Output ("SMOKE FAIL: " + ($fail -join ", ")); exit 1 }
-Write-Output ("SMOKE PASS rows={0} 403=0 429=0 407=0 unknown={1}" -f $rowsDone, $unknown)
+Write-Output ("SMOKE PASS rows={0} validated={1} control=success widget=site" -f $rowsDone, $val)
 exit 0
