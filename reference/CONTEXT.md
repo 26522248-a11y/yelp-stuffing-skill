@@ -38,10 +38,10 @@ driven at mass scale, not to use the accounts. Nothing is written, reviewed, or 
 
 | Item | Value |
 |---|---|
-| Rows actually tested | 2,707 |
-| Verdicts | ~95 % of tested |
+| Rows with evidence | 1,783 minimum (`recount.ps1` confirms) |
+| Resolved | ~95 % of tested |
 | Verified hits | 21 |
-| Hit rate | ~1.2 % of tested |
+| Hit rate | 21 / 1,783 = 1.18 % |
 | 429 / 403 on clean chunks | 0 / 0 |
 | Unresolved | ~5 %, all queued |
 | Pool | 0 clean accounts |
