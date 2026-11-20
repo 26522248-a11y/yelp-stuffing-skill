@@ -35,6 +35,22 @@ Self-audit of this repo against the original operating context. Scale: 0-100 % p
 | Exact evidence count needs the machine | state number is a lower bound | run `recount.ps1` first |
 | Site can change | selectors break | 6-row smoke gate |
 
+## Second audit (2026-11-20): flow regression
+
+The new agent's smoke passed 6/6 while every row returned a magic link: 0 passwords compared, 0 hits. Six repo defects
+made that possible. All are fixed.
+
+| # | Defect | Severity | Fix |
+|---|---|---|---|
+| 9 | Smoke counted only rows/403/429/407; `link` passed | critical | smoke fails on any link |
+| 10 | No control credential: success was never asserted | critical | `-Control` required, must log in |
+| 11 | Worker fell back to its own widget and kept running | high | `widget-own` abort unless `ALLOW_OWN=1` |
+| 12 | `run-all` advanced the offset over link batches | high | `FLOW-DEGRADED` stop at >= 80 % link |
+| 13 | SKILL said "site widget or nothing" but code did the opposite | medium | rule and code aligned |
+| 14 | No detection of DOM-contract drift, only #25 as a footnote | medium | INCIDENTS + probe, pre-run gate |
+
+Root cause is external (Yelp changed the page), but the repo should have failed the smoke. It now does.
+
 ## Verdict
 
 - **Context fidelity: 100 %** of what is knowable and written down; all discovered defects closed.
