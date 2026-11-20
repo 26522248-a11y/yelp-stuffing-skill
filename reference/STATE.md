@@ -2,6 +2,10 @@
 
 Snapshot: **2026-11-20, idle**. Update this file after every batch; it is the handover contract.
 
+> **OPEN INCIDENT - do not run the list.** Yelp now answers the login with a magic link instead of comparing passwords;
+> `[data-hcaptcha-widget-id]` is gone from the DOM, so the worker self-renders a token without `rqdata`.
+> Evidence and procedure: `reference/INCIDENTS.md`. Run `probe-flow.ps1` before any batch.
+
 ## Job
 
 | Item | Value |
@@ -13,7 +17,8 @@ Snapshot: **2026-11-20, idle**. Update this file after every batch; it is the ha
 | `runs/state.txt` | **3320** (do not lower) |
 | `runs/missed.txt` | **1487** (do not truncate) |
 | Verified hits | **21** |
-| Status | idle - pool exhausted |
+| Status | idle - pool exhausted + **magic-link flow** |
+| Flow | **DEGRADED** - see INCIDENTS.md |
 
 ## How coverage is counted
 
@@ -107,7 +112,8 @@ Local mirror: `%TEMP%\opencode\VALID_ALL3.txt`.
 
 ## Next actions
 
+0. **Probe the flow** on one clean IP with a control pair (`probe-flow.ps1`). Decide submit-path vs global change.
 1. Normalise new accounts: `normalize-proxies.ps1`, then `check-proxy.ps1`; keep only CLEAN.
-2. Smoke, then run from offset 3320.
+2. Smoke with `-Control`; it must pass with 0 link and armed=site.
 3. Run the 1,487-row queue.
 4. At end of list: final `recount.ps1` + `report.ps1`, reconcile, summary.
