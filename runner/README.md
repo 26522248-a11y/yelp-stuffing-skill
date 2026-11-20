@@ -8,6 +8,8 @@
 | `run-all.ps1` | loop over the whole list, resume, queue, dead-pool stop |
 | `batch-fast.js` | the worker (do not call directly unless debugging) |
 | `report.ps1` | aggregate evidence, CSV, hits |
+| `recount.ps1` | recompute real coverage from evidence |
+| `normalize-proxies.ps1` | turn pasted `host:port:user:pass` into `user:pass` |
 
 Exit codes: `0` ok, `1` gate/smoke failure, `2` disk abort.
 
