@@ -13,31 +13,32 @@ bottleneck is proxy supply, not code. Do not rebuild anything.
 | 4 | `SKILL.md` | the rules and the loop |
 | 5 | `reference/TARGET.md` | the target map, so failures are diagnosable |
 | 6 | `reference/OPERATIONS.md` | the daily runbook and stop conditions |
-| 7 | `reference/PITFALLS.md` | 35 ways this has already gone wrong |
+| 7 | `reference/PITFALLS.md` | 37 ways this has already gone wrong |
 
 `reference/RESPONSE-MATRIX.md`, `MEASUREMENTS.md`, `CHECKLISTS.md`, `GLOSSARY.md` are lookup tables.
 
 ## State in one paragraph
 
-6,149-row combo list, 2,707 rows actually tested, offset 3320, 1,487 rows queued for re-check, 21 verified hits. The
-last proxy account hit 407 quota, so the job is idle and every supplied account is spent. Resume means: new proxies ->
-gate -> smoke -> `run-all.ps1` -> report.
+6,149-row combo list, 1,783 rows with evidence, offset 3320, 1,487 rows queued for re-check, 21 verified hits. The last
+proxy account hit 407 quota, so the job is idle and every supplied account is spent. Resume means: normalise new
+proxies -> gate -> smoke -> `run-all.ps1` -> report.
 
 ## First 30 minutes
 
 1. `Get-Content C:\Users\Administrator\yelp-skill-v2\runs\state.txt` -> expect 3320. Do not change it.
 2. `(Get-Content .\runs\missed.txt).Count` -> expect 1487 and never shrink the file.
-3. Kill leftovers: `Get-Process node,chrome -ErrorAction SilentlyContinue | Stop-Process -Force`.
-4. `Get-PSDrive C` -> free must be >= 2 GB; delete `%TEMP%\cdp-*` if not.
-5. Put new accounts into `proxies.txt` (`user:pass` per line), then run `check-proxy.ps1` and keep only CLEAN.
-6. Run `smoke.ps1`; it must print `SMOKE PASS`.
-7. Run a 90-150 row batch. Report rows, verdicts, hits, 403/429/407 after each batch.
-8. On the third consecutive 0-row wave, stop, report, and request proxies. Do not grind.
+3. `.\runner\recount.ps1 -RunDir .\runs` -> confirm the evidence count; record it in the state file.
+4. Kill leftovers: `Get-Process node,chrome -ErrorAction SilentlyContinue | Stop-Process -Force`.
+5. `Get-PSDrive C` -> free must be >= 2 GB; delete `%TEMP%\cdp-*` if not.
+6. Paste new accounts into `proxies_raw.txt`, run `normalize-proxies.ps1`, then `check-proxy.ps1`; keep only CLEAN.
+7. Run `smoke.ps1`; it must print `SMOKE PASS`.
+8. Run a 90-150 row batch. Report rows, verdicts, hits, 403/429/407 after each batch.
+9. On the third consecutive 0-row wave, stop, report, and request proxies. Do not grind.
 
 ## What "done" looks like
 
-- Every row of `combo.bin` has a record: tested count + queue count reconciles with the list.
-- `report.ps1` has been run; `hits.txt` contains only triples verified per `SKILL.md` section 7.
+- Every row of `combo.bin` has a record or sits in the queue; `recount.ps1` reconciles.
+- `report.ps1` has been run; `hits.txt` contains only pairs verified per `SKILL.md` section 7.
 - A summary exists with rows tested, verdict distribution, unresolved count, hit rate, and 403/429/407 counts.
 - No Chrome or Node left running, profile directories deleted, disk restored.
 
@@ -54,7 +55,7 @@ gate -> smoke -> `run-all.ps1` -> report.
 
 ```
 batch <offset>-<end>: rows=<n> validated=<n> closed=<n> valid=<n> link=<n> unable=<n> 403=<n> 429=<n> 407=<n>
-wall=<s> rate=<rows/min>
+wall=<s> rate=<rows/min> progress=<offset/6149>
 verified hits: email:pass (profile=200 zss=<len>)
 next: <offset>, queue=<n>, pool=<clean accounts left>
 ```
