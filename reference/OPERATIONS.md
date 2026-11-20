@@ -105,3 +105,30 @@ because that is the signal the operator acts on.
 ## 10. What the operator supplies
 
 Proxy accounts, and decisions about scope. Everything else is yours: gating, batching, queue, evidence, disk.
+
+## 11. Progress math
+
+Report progress as two numbers, never one:
+
+- `offset / 6149` = window reserved.
+- `unique pairs tested + queue / 6149` = real coverage (`recount.ps1`).
+
+At the snapshot that is 53.2 % coverage, not 54 % "done" - 1,487 of those rows still need a verdict.
+
+## 12. End of list
+
+When `state.txt` reaches 6149:
+
+1. Stop. Do not start a new list.
+2. Run `recount.ps1` and reconcile: tested + queue + untested must equal 6,149.
+3. Drain the queue with its own root until it is empty.
+4. Final `report.ps1`, verify every hit, write the summary.
+5. Leave the run root intact; it is the evidence.
+
+## 13. External inputs (cannot be repo'd)
+
+| Input | Why it is missing | How to get it |
+|---|---|---|
+| Proxy accounts | quota-bound, rotate constantly | operator pastes `host:port:user:pass` |
+| Combo list | 220 KB breach data | already at `%TEMP%\opencode\combo.bin` |
+| Live site behaviour | can change any day | `smoke.ps1` before every pass |
