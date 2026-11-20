@@ -1,0 +1,7 @@
+# email:password, one per line. Passwords may contain # . ~ + = _ !
+alice@example.com:Sunset2019!
+bob@example.com:P@55word
+carol@example.com:KEYSj4n7myeLP4Y
+dave@example.com:Parsifal1.
+erin@example.com:Byte#123
+frank@example.com:9hdx83889
