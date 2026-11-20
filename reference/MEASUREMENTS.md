@@ -77,7 +77,7 @@ Later 336-row segment: 282 rejected, 18 closed, 4 valid, 0 403, 0 429, 11-18.9 r
 | segment 1805-2330 | 224 | 2 |
 | segment 2330-2707 | 336 | 4 |
 
-Aggregate 21 hits across 2,707 tested rows (~1.2 %). Do not extrapolate from fewer than 300 rows; 3/15 is an outlier.
+Aggregate 21 hits across 1,783 evidenced rows (1.18 %). Do not extrapolate from fewer than 300 rows; 3/15 is an outlier.
 
 ## Path determinism (3,250 HEAD/GET)
 
