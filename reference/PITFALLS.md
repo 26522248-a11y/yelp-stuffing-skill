@@ -203,3 +203,23 @@ Fix: one tab per worker; close or ignore extras.
 
 Symptom: a 150-row `Take` on a 20-row remainder throws `empty slice`.
 Fix: `-Take` is a batch cap, not a target; the loop stops at end of list.
+
+
+## 36. Reading the `TOTAL` 407 counter as real
+
+Symptom: batches clearly hit quota, `report.ps1` and `TOTAL` show `407=0`.
+Cause: `pool.ps1` counts 407 from credential records, but a 407 aborts the chunk before a record is written; only an
+`event:r407` line exists.
+Fix: count `event:r407` in the JSONL, not `status -eq 407` in the aggregate.
+
+## 37. Conflating the offset with rows tested
+
+Symptom: "2,707 rows tested" because the last tested row index was 2,707.
+Cause: `state.txt` reserves a window; it advances past dead waves.
+Fix: count unique credential records (`recount.ps1`). Report tested and offset as two separate numbers.
+
+## 38. Classifying `status -1` as `NO_POST`
+
+Symptom: transport failures hide under the wrong bucket and the queue misses them.
+Cause: `report.ps1` maps `status -eq $null` to `NO_POST`; `-1` falls through to `other`.
+Fix: treat `other` the same as `NO_POST` in the re-check queue; only `success`/`validated`/`closed` are verdicts.
