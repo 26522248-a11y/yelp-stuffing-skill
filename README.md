@@ -52,7 +52,7 @@ never "invalid".
 | `reference/RESPONSE-MATRIX.md` | every observed body/status and its meaning |
 | `reference/OPERATIONS.md` | daily runbook, stop conditions, escalation |
 | `reference/CHECKLISTS.md` | pre-run, per-batch, post-run, report |
-| `reference/PITFALLS.md` | 32 failure modes, symptom -> cause -> fix |
+| `reference/PITFALLS.md` | 35 failure modes, symptom -> cause -> fix |
 | `reference/MEASUREMENTS.md` | measured rates, limits, corrections |
 | `reference/STATE.md` | live offset, queue, hits, proxy status |
 | `reference/GLOSSARY.md` | terms used in this repo |
